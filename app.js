@@ -163,15 +163,19 @@ function setupShipDragDrop() {
         // Click to rotate in staging, or return to staging if on board
         ship.addEventListener('click', (e) => {
             if (gameState.phase !== 'placement') return;
+            if (draggedShipElement) return; // Ignore if dragging
 
             if (ship.parentElement === stagingShips) {
                 ship.classList.toggle('vertical');
             }
         });
 
-        // Mouse down to capture which segment was clicked
-        ship.addEventListener('mousedown', (e) => {
+        // Mouse/Touch down to capture which segment was clicked
+        const handleStart = (e) => {
             if (gameState.phase !== 'placement') return;
+
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
 
             const rect = ship.getBoundingClientRect();
             const segments = ship.querySelectorAll('.ship-segment');
@@ -179,15 +183,61 @@ function setupShipDragDrop() {
             // Find which segment was clicked
             for (let i = 0; i < segments.length; i++) {
                 const segRect = segments[i].getBoundingClientRect();
-                if (e.clientX >= segRect.left && e.clientX <= segRect.right &&
-                    e.clientY >= segRect.top && e.clientY <= segRect.bottom) {
+                if (clientX >= segRect.left && clientX <= segRect.right &&
+                    clientY >= segRect.top && clientY <= segRect.bottom) {
                     dragOffset = i;
                     break;
                 }
             }
-        });
+        };
 
-        // Drag start
+        ship.addEventListener('mousedown', handleStart);
+        ship.addEventListener('touchstart', handleStart, { passive: false });
+
+        // Touch drag support
+        ship.addEventListener('touchstart', (e) => {
+            if (gameState.phase !== 'placement') return;
+
+            draggedShipElement = ship;
+            draggedShip = {
+                name: ship.dataset.ship,
+                length: parseInt(ship.dataset.length),
+                isVertical: ship.classList.contains('vertical')
+            };
+            shipOriginalParent = ship.parentElement;
+            const rect = ship.getBoundingClientRect();
+            shipOriginalPosition = { x: rect.left, y: rect.top };
+            ship.classList.add('dragging');
+
+            e.preventDefault();
+        }, { passive: false });
+
+        ship.addEventListener('touchmove', (e) => {
+            if (!draggedShipElement) return;
+            e.preventDefault();
+        }, { passive: false });
+
+        ship.addEventListener('touchend', (e) => {
+            if (!draggedShipElement) return;
+            e.preventDefault();
+
+            const touch = e.changedTouches[0];
+            const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+            const cell = dropTarget?.closest('.cell');
+
+            if (cell && cell.dataset.board === 'player') {
+                handleShipDrop(parseInt(cell.dataset.index));
+            } else {
+                animateReturnToStaging();
+            }
+
+            ship.classList.remove('dragging');
+            draggedShipElement = null;
+            draggedShip = null;
+            dragOffset = 0;
+        }, { passive: false });
+
+        // Drag start (desktop)
         ship.addEventListener('dragstart', (e) => {
             if (gameState.phase !== 'placement') return;
             draggedShipElement = ship;
@@ -203,7 +253,7 @@ function setupShipDragDrop() {
             e.dataTransfer.effectAllowed = 'move';
         });
 
-        // Drag end
+        // Drag end (desktop)
         ship.addEventListener('dragend', (e) => {
             ship.classList.remove('dragging');
             dragOffset = 0;
@@ -226,7 +276,14 @@ function setupShipDragDrop() {
             return;
         }
 
-        let dropIndex = parseInt(cell.dataset.index);
+        handleShipDrop(parseInt(cell.dataset.index));
+    });
+
+    // Handle ship drop logic (shared between mouse and touch)
+    function handleShipDrop(cellIndex) {
+        if (!draggedShip) return;
+
+        let dropIndex = cellIndex;
 
         // Adjust for drag offset
         if (draggedShip.isVertical) {
@@ -264,7 +321,7 @@ function setupShipDragDrop() {
         draggedShip = null;
         draggedShipElement = null;
         dragOffset = 0;
-    });
+    }
 }
 
 // Check if ship can be placed

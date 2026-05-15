@@ -379,6 +379,9 @@ header {
         inset 0 2px 4px rgba(255, 255, 255, 0.3),
         inset 0 -2px 4px rgba(0, 0, 0, 0.2);
     overflow: hidden;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .ship:active {
@@ -784,7 +787,32 @@ button:active {
 }
 
 /* Responsive Design */
-@media (max-width: 1400px) {
+
+/* Galaxy Tab S9 11" - Landscape (2560x1600) - Primary Device */
+@media (min-width: 1400px) and (min-height: 900px) {
+    :root {
+        --cell: 45px;
+        --buffer: 28px;
+        --frame-pad: 18px;
+    }
+}
+
+/* Galaxy Tab S9 11" - Portrait (1600x2560) */
+@media (max-width: 1600px) and (min-height: 2000px) {
+    :root {
+        --cell: 38px;
+        --buffer: 24px;
+        --frame-pad: 14px;
+    }
+
+    .game-container {
+        flex-direction: column;
+        gap: 2vh;
+    }
+}
+
+/* Tablet landscape - smaller tablets */
+@media (max-width: 1400px) and (min-width: 900px) {
     :root {
         --cell: 35px;
         --buffer: 22px;
@@ -792,19 +820,86 @@ button:active {
     }
 }
 
-@media (max-width: 1200px) {
+/* Tablet portrait / large phone landscape */
+@media (max-width: 900px) and (min-width: 600px) {
     :root {
         --cell: 32px;
         --buffer: 20px;
         --frame-pad: 12px;
     }
+
+    .game-container {
+        flex-direction: column;
+        gap: 1.5vh;
+    }
+
+    #staging-ships {
+        padding: 1vh;
+        gap: 0.8vh;
+    }
+
+    .ship-segment {
+        width: 32px;
+        height: 32px;
+    }
+
+    .destroyer-container {
+        width: 64px;
+        height: 32px;
+    }
+
+    .submarine-container,
+    .cruiser-container {
+        width: 96px;
+        height: 32px;
+    }
+
+    .battleship-container {
+        width: 128px;
+        height: 32px;
+    }
+
+    .carrier-container {
+        width: 160px;
+        height: 32px;
+    }
+
+    .destroyer-container.vertical {
+        width: 32px;
+        height: 64px;
+    }
+
+    .submarine-container.vertical,
+    .cruiser-container.vertical {
+        width: 32px;
+        height: 96px;
+    }
+
+    .battleship-container.vertical {
+        width: 32px;
+        height: 128px;
+    }
+
+    .carrier-container.vertical {
+        width: 32px;
+        height: 160px;
+    }
 }
 
-@media (max-width: 900px) {
+/* Galaxy S21 (2400x1080) and similar phones */
+@media (max-width: 600px) {
     :root {
         --cell: 28px;
         --buffer: 18px;
         --frame-pad: 10px;
+    }
+
+    .splash-title {
+        font-size: clamp(2.5rem, 8vh, 4rem);
+    }
+
+    .splash-subtitle {
+        font-size: clamp(1.2rem, 3vh, 1.8rem);
     }
 
     .game-container {
@@ -813,7 +908,7 @@ button:active {
     }
 
     #staging-ships {
-        padding: 1vh;
+        padding: 0.8vh;
         gap: 0.5vh;
     }
 
@@ -863,87 +958,20 @@ button:active {
         width: 28px;
         height: 140px;
     }
-}
-
-@media (max-width: 600px) {
-    :root {
-        --cell: 24px;
-        --buffer: 15px;
-        --frame-pad: 8px;
-    }
-
-    .splash-title {
-        font-size: clamp(2rem, 8vh, 3.5rem);
-    }
-
-    .splash-subtitle {
-        font-size: clamp(1rem, 3vh, 1.5rem);
-    }
-
-    #staging-ships {
-        padding: 0.5vh;
-        gap: 0.3vh;
-    }
-
-    .ship-segment {
-        width: 24px;
-        height: 24px;
-    }
-
-    .destroyer-container {
-        width: 48px;
-        height: 24px;
-    }
-
-    .submarine-container,
-    .cruiser-container {
-        width: 72px;
-        height: 24px;
-    }
-
-    .battleship-container {
-        width: 96px;
-        height: 24px;
-    }
-
-    .carrier-container {
-        width: 120px;
-        height: 24px;
-    }
-
-    .destroyer-container.vertical {
-        width: 24px;
-        height: 48px;
-    }
-
-    .submarine-container.vertical,
-    .cruiser-container.vertical {
-        width: 24px;
-        height: 72px;
-    }
-
-    .battleship-container.vertical {
-        width: 24px;
-        height: 96px;
-    }
-
-    .carrier-container.vertical {
-        width: 24px;
-        height: 120px;
-    }
 
     .statistics-table {
-        padding: 1vh;
-        font-size: clamp(0.7rem, 1.5vh, 0.9rem);
+        padding: 1.5vh;
+        font-size: clamp(0.85rem, 1.8vh, 1rem);
     }
 
     .stats-header,
     .stats-row {
-        grid-template-columns: 70px 40px 40px;
-        gap: 5px;
+        grid-template-columns: 80px 50px 50px;
+        gap: 8px;
     }
 }
 
+/* Very short screens or landscape phones */
 @media (max-height: 700px) {
     :root {
         --cell: 26px;
@@ -951,17 +979,14 @@ button:active {
         --frame-pad: 8px;
     }
 
-    header h1 {
-        margin: 0.3vh 0;
-    }
-
     #message-area {
-        min-height: 4vh;
-        padding: 0.5vh 1vw;
+        min-height: 5vh;
+        padding: 0.8vh 1vw;
     }
 
     .board-wrapper h2 {
         margin-bottom: 0.5vh;
+        font-size: clamp(0.85rem, 1.8vh, 1.1rem);
     }
 
     #staging-ships {

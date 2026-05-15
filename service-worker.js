@@ -1,4 +1,4 @@
-const CACHE_NAME = 'battleship-v1';
+const CACHE_NAME = 'battleship-v2';
 const urlsToCache = [
   './',
   './index.html',
