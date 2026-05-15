@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Icons</title>
+</head>
+<body>
+    <h1>Generating Icons...</h1>
+    <p>Icons will be saved automatically.</p>
+
+    <canvas id="canvas192" width="192" height="192" style="display:none;"></canvas>
+    <canvas id="canvas512" width="512" height="512" style="display:none;"></canvas>
+
+    <script>
+        function createIcon(canvasId, size, filename) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#0f89c6');
+            gradient.addColorStop(1, '#1a5f7a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // Draw ship silhouette
+            ctx.fillStyle = '#ffffff';
+
+            // Ship body (simplified battleship shape)
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const shipWidth = size * 0.7;
+            const shipHeight = size * 0.3;
+
+            ctx.beginPath();
+            // Hull
+            ctx.moveTo(centerX - shipWidth/2, centerY + shipHeight/2);
+            ctx.lineTo(centerX - shipWidth/2 + 20, centerY - shipHeight/2);
+            ctx.lineTo(centerX + shipWidth/2 - 20, centerY - shipHeight/2);
+            ctx.lineTo(centerX + shipWidth/2, centerY + shipHeight/2);
+            ctx.closePath();
+            ctx.fill();
+
+            // Tower/Bridge
+            const towerWidth = shipWidth * 0.25;
+            const towerHeight = shipHeight * 0.8;
+            ctx.fillRect(centerX - towerWidth/2, centerY - shipHeight/2 - towerHeight, towerWidth, towerHeight);
+
+            // Gun turret
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, shipHeight * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${size * 0.15}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('BATTLESHIP', centerX, size - 20);
+
+            // Download
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Generate both icons
+        setTimeout(() => {
+            createIcon('canvas192', 192, 'icon-192.png');
+            setTimeout(() => {
+                createIcon('canvas512', 512, 'icon-512.png');
+                document.body.innerHTML += '<h2 style="color: green;">✓ Icons generated! Check your downloads folder.</h2>';
+            }, 500);
+        }, 500);
+    </script>
+</body>
+</html>

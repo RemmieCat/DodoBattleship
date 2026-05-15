@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Play Battleship against the computer at three difficulty levels">
+    <meta name="theme-color" content="#0f89c6">
+    <title>Battleship</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <h1 class="splash-title">BATTLESHIP</h1>
+        <p class="splash-subtitle">Click to Begin</p>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" style="display: none;">
+        <header>
+            <div id="message-area">Welcome! Place your ships to begin.</div>
+        </header>
+
+        <div class="game-container">
+            <!-- Staging Area / Computer Board -->
+            <div class="board-wrapper">
+                <h2 id="left-board-label">Staging Area</h2>
+                <div class="frame">
+                    <div class="surface" id="staging-surface">
+                        <!-- Ships in staging -->
+                        <div id="staging-ships">
+                            <div class="ship destroyer-container" draggable="true" data-ship="destroyer" data-length="2">
+                                <div class="ship-segment"></div>
+                                <div class="ship-segment"></div>
+                            </div>
+                            <div class="ship submarine-container" draggable="true" data-ship="submarine" data-length="3">
+                                <div class="ship-segment"></div>
+                                <div class="ship-segment"></div>
+                                <div class="ship-segment"></div>
+                            </div>
+                            <div class="ship cruiser-container" draggable="true" data-ship="cruiser" data-length="3">
+                                <div class="ship-segment"></div>
+                                <div class="ship-segment"></div>
+                                <div class="ship-segment"></div>
+                            </div>
+                            <div class="ship battleship-container" draggable="true" data-ship="battleship" data-length="4">
+                                <div class="ship-segment"></div>
+                                <div class="ship-segment"></div>
+                                <div class="ship-segment"></div>
+                                <div class="ship-segment"></div>
+                            </div>
+                            <div class="ship carrier-container" draggable="true" data-ship="carrier" data-length="5">
+                                <div class="ship-segment"></div>
+                                <div class="ship-segment"></div>
+                                <div class="ship-segment"></div>
+                                <div class="ship-segment"></div>
+                                <div class="ship-segment"></div>
+                            </div>
+                        </div>
+                        <!-- Computer board (hidden initially) -->
+                        <div id="computer-board" class="cells" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player Board -->
+            <div class="board-wrapper">
+                <h2>Player Board</h2>
+                <div class="frame">
+                    <div class="surface" id="player-surface">
+                        <div id="player-board" class="cells"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Controls -->
+        <div id="game-controls">
+            <button id="randomize-btn">Randomize Ships</button>
+            <button id="start-game-btn" style="display: none;">Start Game</button>
+            <div id="difficulty-selector" style="display: none;">
+                <label>Difficulty:</label>
+                <button class="difficulty-btn" data-difficulty="1">Easy</button>
+                <button class="difficulty-btn" data-difficulty="2">Medium</button>
+                <button class="difficulty-btn" data-difficulty="3">Hard</button>
+            </div>
+            <button id="debug-toggle-btn" style="display: none;">Toggle Computer Ships</button>
+            <button id="view-stats-btn" style="display: none;">View Statistics</button>
+            <button id="new-game-btn" style="display: none;">New Game</button>
+        </div>
+    </div>
+
+    <!-- Statistics Modal -->
+    <div id="stats-modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Game Statistics</h2>
+                <button class="modal-close" id="close-stats-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="stats-modal-body">
+                <!-- Statistics will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful:', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed:', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

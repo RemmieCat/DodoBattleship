@@ -1,0 +1,1018 @@
+:root {
+    --cell: 40px;
+    --cols: 10;
+    --rows: 10;
+    --duration: 2000ms;
+    --surface: #0f89c6;
+    --buffer: 26px;
+    --radius: 16px;
+    --border: rgba(20, 30, 55, 0.18);
+    --frame-pad: 16px;
+    --water-size: 165px;
+    --water-scale: 2.8;
+    --water-dot-size: 18px;
+    --water-dot-color: rgba(256, 256, 256, 0.5);
+    --water-dot-fade: 1200ms;
+    --water-a: rgba(80, 235, 215, 0.30);
+    --water-b: rgba(35, 190, 210, 0.26);
+    --water-c: rgba(20, 145, 205, 0.20);
+    --fire-size: 185px;
+    --fire-scale: 3.05;
+    --fire-ring-width: 7px;
+    --fire-dot-size: 22px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: #f6f7fb;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+}
+
+/* Splash Screen */
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #0f89c6 0%, #1a5f7a 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.splash-title {
+    font-size: 5rem;
+    color: white;
+    font-weight: bold;
+    letter-spacing: 0.5rem;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    margin-bottom: 2rem;
+}
+
+.splash-subtitle {
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* Game Screen */
+#game-screen {
+    padding: 1vh 1vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 1vh;
+    flex-shrink: 0;
+}
+
+#message-area {
+    background: rgba(15, 137, 198, 0.1);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5vh 1.5vw;
+    font-size: clamp(1rem, 2.2vh, 1.4rem);
+    color: #223;
+    min-height: 7vh;
+    max-width: 900px;
+    margin: 0 auto;
+    flex-shrink: 0;
+    font-weight: 500;
+}
+
+.game-container {
+    display: flex;
+    justify-content: center;
+    gap: 2vw;
+    flex-wrap: wrap;
+    flex: 1;
+    align-items: center;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.board-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.board-wrapper h2 {
+    font-size: clamp(0.9rem, 2vh, 1.3rem);
+    color: #1a5f7a;
+    margin-bottom: 1vh;
+}
+
+.frame {
+    display: inline-block;
+    padding: var(--frame-pad);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow:
+        0 10px 24px rgba(0, 0, 0, 0.12),
+        inset 0 2px 0 rgba(255, 255, 255, 0.35);
+}
+
+.surface {
+    width: calc(var(--cols) * var(--cell) + 2 * var(--buffer));
+    height: calc(var(--rows) * var(--cell) + 2 * var(--buffer));
+    position: relative;
+    overflow: hidden;
+    background: var(--surface);
+    border-radius: calc(var(--radius) - 6px);
+    user-select: none;
+    touch-action: manipulation;
+    transform: translateZ(0);
+}
+
+#staging-surface {
+    background: #4a5568;
+}
+
+.surface.shake {
+    animation: shake 320ms ease-in-out;
+}
+
+@keyframes shake {
+    0% { transform: translate(0, 0) }
+    15% { transform: translate(-2px, 1px) }
+    30% { transform: translate(3px, -2px) }
+    45% { transform: translate(-4px, 2px) }
+    60% { transform: translate(3px, 1px) }
+    75% { transform: translate(-2px, -1px) }
+    100% { transform: translate(0, 0) }
+}
+
+.cells {
+    position: absolute;
+    top: var(--buffer);
+    left: var(--buffer);
+    width: calc(var(--cols) * var(--cell));
+    height: calc(var(--rows) * var(--cell));
+    display: grid;
+    grid-template-columns: repeat(var(--cols), var(--cell));
+    grid-template-rows: repeat(var(--rows), var(--cell));
+    gap: 0;
+    z-index: 5;
+    overflow: visible;
+    border-radius: 0;
+}
+
+.cell {
+    position: relative;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    outline: none;
+    transition: box-shadow 0.15s ease;
+    /* Add subtle grid lines to all cells */
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+    /* Rounded corners for water cells */
+    border-radius: 3px;
+}
+
+.cell:not(.used):hover {
+    box-shadow:
+        inset 0 0 0 1px rgba(0, 0, 0, 0.12),
+        inset 0 0 20px rgba(0, 0, 0, 0.25);
+}
+
+.cell.used {
+    cursor: default;
+}
+
+.cell:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.95);
+    outline-offset: -2px;
+}
+
+/* Water dot (miss) */
+.cell.mark-water::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--water-dot-size);
+    height: var(--water-dot-size);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--water-dot-color);
+    opacity: 0;
+    animation: dotFadeIn var(--water-dot-fade) ease-out forwards;
+    pointer-events: none;
+    z-index: 10;
+}
+
+@keyframes dotFadeIn {
+    to { opacity: 1; }
+}
+
+/* Fire dot (hit) */
+.cell.mark-fire::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--fire-dot-size);
+    height: var(--fire-dot-size);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0.65);
+    opacity: 0;
+    animation: fireDot var(--duration) ease-out forwards;
+    pointer-events: none;
+    z-index: 10;
+    background: radial-gradient(circle at 35% 35%,
+        rgba(255, 160, 100, 1) 0%,
+        rgba(255, 80, 50, 1) 30%,
+        rgba(240, 40, 30, 1) 65%,
+        rgba(200, 0, 0, 1) 100%
+    );
+    box-shadow:
+        0 0 12px rgba(255, 100, 60, 0.8),
+        0 0 22px rgba(255, 50, 30, 0.7),
+        0 0 36px rgba(200, 0, 0, 0.6);
+}
+
+@keyframes fireDot {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.60); filter: saturate(1.0) }
+    18% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); filter: saturate(1.18) }
+    40% { transform: translate(-50%, -50%) scale(0.98) }
+    62% { transform: translate(-50%, -50%) scale(1.06) }
+    82% { transform: translate(-50%, -50%) scale(1.00); filter: saturate(1.12) }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1.00) }
+}
+
+/* Water ripple */
+.ripple-water {
+    position: absolute;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.70;
+    pointer-events: none;
+    z-index: 1;
+    will-change: transform, opacity;
+    animation: waterRipple var(--duration) ease-out forwards;
+    background: radial-gradient(circle,
+        rgba(255, 255, 255, 0) 0%,
+        var(--water-a) 22%,
+        var(--water-b) 46%,
+        var(--water-c) 72%,
+        rgba(0, 255, 255, 0) 100%
+    );
+    box-shadow:
+        0 0 12px rgba(80, 235, 215, 0.18),
+        0 0 22px rgba(35, 190, 210, 0.14);
+    mix-blend-mode: screen;
+}
+
+@keyframes waterRipple {
+    to { transform: translate(-50%, -50%) scale(var(--water-scale)); opacity: 0; }
+}
+
+/* Fire ripple */
+.ripple-fire {
+    position: absolute;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 0.98;
+    background: transparent;
+    pointer-events: none;
+    z-index: 2;
+    box-sizing: border-box;
+    will-change: transform, opacity;
+    animation: fireRipple var(--duration) ease-out forwards;
+    border: var(--fire-ring-width) solid var(--ring-color, rgba(255, 90, 40, 0.92));
+    filter:
+        drop-shadow(0 0 8px rgba(255, 150, 60, 0.45))
+        drop-shadow(0 0 14px rgba(255, 70, 35, 0.65))
+        drop-shadow(0 0 22px rgba(235, 10, 20, 0.70))
+        drop-shadow(0 0 28px rgba(170, 0, 10, 0.40));
+    mix-blend-mode: screen;
+}
+
+@keyframes fireRipple {
+    to { transform: translate(-50%, -50%) scale(var(--fire-scale)); opacity: 0; }
+}
+
+/* Sparks */
+.spark {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 4;
+    opacity: 0.95;
+    width: var(--sx, 4px);
+    height: var(--sy, 4px);
+    border-radius: 999px;
+    background: var(--sparkColor, rgba(255, 120, 40, 0.95));
+    filter:
+        drop-shadow(0 0 6px rgba(255, 160, 60, 0.45))
+        drop-shadow(0 0 10px rgba(235, 20, 30, 0.30));
+    mix-blend-mode: screen;
+    animation: sparkFly var(--life, 700ms) ease-out forwards;
+    will-change: transform, opacity;
+}
+
+@keyframes sparkFly {
+    0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 0.95 }
+    70% { opacity: 0.85 }
+    100% {
+        transform:
+            translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px)))
+            rotate(var(--rot, 0deg))
+            scale(0.1);
+        opacity: 0;
+    }
+}
+
+/* Ships */
+#staging-ships {
+    position: absolute;
+    top: var(--buffer);
+    left: var(--buffer);
+    width: calc(var(--cols) * var(--cell));
+    height: calc(var(--rows) * var(--cell));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+    z-index: 6;
+}
+
+.ship {
+    background: linear-gradient(135deg, #8b9196 0%, #b0b5ba 50%, #8b9196 100%);
+    display: flex;
+    cursor: grab;
+    position: relative;
+    border: 2px solid #4a5056;
+    border-radius: 8px;
+    box-shadow:
+        0 4px 8px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.ship:active {
+    cursor: grabbing;
+}
+
+.ship-segment {
+    width: 40px;
+    height: 40px;
+    border-right: 1px solid rgba(74, 80, 86, 0.3);
+    position: relative;
+    background: linear-gradient(180deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.1) 100%);
+}
+
+.ship-segment:last-child {
+    border-right: none;
+}
+
+.ship-segment::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: radial-gradient(circle, #5a6066 0%, #3a4046 100%);
+    border-radius: 50%;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Vertical ship segments */
+.ship.vertical .ship-segment {
+    border-right: none;
+    border-bottom: 1px solid rgba(74, 80, 86, 0.3);
+}
+
+.ship.vertical .ship-segment:last-child {
+    border-bottom: none;
+}
+
+.destroyer-container {
+    width: 80px;
+    height: 40px;
+}
+
+.submarine-container,
+.cruiser-container {
+    width: 120px;
+    height: 40px;
+}
+
+.battleship-container {
+    width: 160px;
+    height: 40px;
+}
+
+.carrier-container {
+    width: 200px;
+    height: 40px;
+}
+
+/* Vertical variants */
+.destroyer-container.vertical {
+    width: 40px;
+    height: 80px;
+    flex-wrap: wrap;
+}
+
+.submarine-container.vertical,
+.cruiser-container.vertical {
+    width: 40px;
+    height: 120px;
+    flex-wrap: wrap;
+}
+
+.battleship-container.vertical {
+    width: 40px;
+    height: 160px;
+    flex-wrap: wrap;
+}
+
+.carrier-container.vertical {
+    width: 40px;
+    height: 200px;
+    flex-wrap: wrap;
+}
+
+/* Placed ships on board */
+.cell.ship-placed:not(.ship-hidden) {
+    background: #b8bdc2;
+    border: 2px solid #4a5056;
+    z-index: 3;
+    position: relative;
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.4),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.cell.ship-placed:not(.ship-hidden)::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: radial-gradient(circle, #6a7076 0%, #4a5056 100%);
+    border-radius: 50%;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Horizontal ships - remove internal vertical borders and corners */
+.cell.ship-horizontal.ship-middle {
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+}
+
+.cell.ship-horizontal.ship-start {
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    background: linear-gradient(90deg, #a8adb2 0%, #c8cdd2 50%, #d0d5da 100%);
+}
+
+.cell.ship-horizontal.ship-middle {
+    background: #c8cdd2;
+}
+
+.cell.ship-horizontal.ship-end {
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    background: linear-gradient(90deg, #d0d5da 0%, #c8cdd2 50%, #a8adb2 100%);
+}
+
+/* Vertical ships - remove internal horizontal borders and corners */
+.cell.ship-vertical.ship-middle {
+    border-top: none;
+    border-bottom: none;
+    border-radius: 0;
+}
+
+.cell.ship-vertical.ship-start {
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    background: linear-gradient(180deg, #a8adb2 0%, #c8cdd2 50%, #d0d5da 100%);
+}
+
+.cell.ship-vertical.ship-middle {
+    background: #c8cdd2;
+}
+
+.cell.ship-vertical.ship-end {
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    background: linear-gradient(180deg, #d0d5da 0%, #c8cdd2 50%, #a8adb2 100%);
+}
+
+/* Hidden ships - MUST completely override all ship-placed styling */
+.cell.ship-placed.ship-hidden,
+.cell.ship-placed.ship-hidden.ship-start,
+.cell.ship-placed.ship-hidden.ship-middle,
+.cell.ship-placed.ship-hidden.ship-end,
+.cell.ship-placed.ship-hidden.ship-horizontal,
+.cell.ship-placed.ship-hidden.ship-vertical {
+    background: transparent !important;
+    border: 0 !important;
+    border-top: 0 !important;
+    border-bottom: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    /* Match rounded corners of water cells */
+    border-radius: 3px !important;
+    /* Match the subtle grid of water cells */
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12) !important;
+    z-index: 1 !important;
+}
+
+.cell.ship-placed.ship-hidden::before {
+    display: none !important;
+    content: none !important;
+}
+
+/* Hidden ships should behave EXACTLY like regular water cells */
+.cell.ship-placed.ship-hidden:not(.used) {
+    cursor: pointer !important;
+    transition: box-shadow 0.15s ease !important;
+}
+
+.cell.ship-placed.ship-hidden:not(.used):hover {
+    background: transparent !important;
+    border: 0 !important;
+    outline: none !important;
+    border-radius: 3px !important;
+    /* Apply the same hover effect as regular cells - grid PLUS darker shadow */
+    box-shadow:
+        inset 0 0 0 1px rgba(0, 0, 0, 0.12),
+        inset 0 0 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+.cell.ship-placed.ship-hidden:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.95) !important;
+    outline-offset: -2px !important;
+}
+
+/* Game Controls */
+#game-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1vw;
+    margin-top: 1vh;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+button {
+    padding: clamp(6px, 1vh, 12px) clamp(12px, 2vw, 24px);
+    font-size: clamp(0.8rem, 1.6vh, 1rem);
+    background: #0f89c6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s;
+}
+
+button:hover {
+    background: #0d76ac;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+button:active {
+    transform: translateY(2px);
+}
+
+#difficulty-selector {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.difficulty-btn {
+    padding: 10px 20px;
+}
+
+.difficulty-btn.selected {
+    background: #1a5f7a;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+#debug-toggle-btn {
+    background: #e53e3e;
+}
+
+#debug-toggle-btn:hover {
+    background: #c53030;
+}
+
+/* Ship dragging */
+.ship.dragging {
+    opacity: 0.5;
+}
+
+.ship.invalid-placement {
+    animation: returnToStaging 0.5s ease-out forwards;
+}
+
+@keyframes returnToStaging {
+    to {
+        transform: translate(0, 0);
+    }
+}
+
+/* Statistics Modal */
+#stats-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #0f89c6 0%, #1a5f7a 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+/* Statistics Table */
+.statistics-table {
+    width: 100%;
+    text-align: left;
+}
+
+.stats-header {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px;
+    gap: 15px;
+    font-weight: bold;
+    padding-bottom: 12px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
+    color: #1a5f7a;
+    font-size: 0.95rem;
+}
+
+.stats-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px;
+    gap: 15px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 1rem;
+}
+
+.stats-row:last-child {
+    border-bottom: none;
+}
+
+.stats-row span,
+.stats-header span {
+    text-align: center;
+}
+
+.stats-row span:first-child,
+.stats-header span:first-child {
+    text-align: left;
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+    :root {
+        --cell: 35px;
+        --buffer: 22px;
+        --frame-pad: 14px;
+    }
+}
+
+@media (max-width: 1200px) {
+    :root {
+        --cell: 32px;
+        --buffer: 20px;
+        --frame-pad: 12px;
+    }
+}
+
+@media (max-width: 900px) {
+    :root {
+        --cell: 28px;
+        --buffer: 18px;
+        --frame-pad: 10px;
+    }
+
+    .game-container {
+        flex-direction: column;
+        gap: 1vh;
+    }
+
+    #staging-ships {
+        padding: 1vh;
+        gap: 0.5vh;
+    }
+
+    .ship-segment {
+        width: 28px;
+        height: 28px;
+    }
+
+    .destroyer-container {
+        width: 56px;
+        height: 28px;
+    }
+
+    .submarine-container,
+    .cruiser-container {
+        width: 84px;
+        height: 28px;
+    }
+
+    .battleship-container {
+        width: 112px;
+        height: 28px;
+    }
+
+    .carrier-container {
+        width: 140px;
+        height: 28px;
+    }
+
+    .destroyer-container.vertical {
+        width: 28px;
+        height: 56px;
+    }
+
+    .submarine-container.vertical,
+    .cruiser-container.vertical {
+        width: 28px;
+        height: 84px;
+    }
+
+    .battleship-container.vertical {
+        width: 28px;
+        height: 112px;
+    }
+
+    .carrier-container.vertical {
+        width: 28px;
+        height: 140px;
+    }
+}
+
+@media (max-width: 600px) {
+    :root {
+        --cell: 24px;
+        --buffer: 15px;
+        --frame-pad: 8px;
+    }
+
+    .splash-title {
+        font-size: clamp(2rem, 8vh, 3.5rem);
+    }
+
+    .splash-subtitle {
+        font-size: clamp(1rem, 3vh, 1.5rem);
+    }
+
+    #staging-ships {
+        padding: 0.5vh;
+        gap: 0.3vh;
+    }
+
+    .ship-segment {
+        width: 24px;
+        height: 24px;
+    }
+
+    .destroyer-container {
+        width: 48px;
+        height: 24px;
+    }
+
+    .submarine-container,
+    .cruiser-container {
+        width: 72px;
+        height: 24px;
+    }
+
+    .battleship-container {
+        width: 96px;
+        height: 24px;
+    }
+
+    .carrier-container {
+        width: 120px;
+        height: 24px;
+    }
+
+    .destroyer-container.vertical {
+        width: 24px;
+        height: 48px;
+    }
+
+    .submarine-container.vertical,
+    .cruiser-container.vertical {
+        width: 24px;
+        height: 72px;
+    }
+
+    .battleship-container.vertical {
+        width: 24px;
+        height: 96px;
+    }
+
+    .carrier-container.vertical {
+        width: 24px;
+        height: 120px;
+    }
+
+    .statistics-table {
+        padding: 1vh;
+        font-size: clamp(0.7rem, 1.5vh, 0.9rem);
+    }
+
+    .stats-header,
+    .stats-row {
+        grid-template-columns: 70px 40px 40px;
+        gap: 5px;
+    }
+}
+
+@media (max-height: 700px) {
+    :root {
+        --cell: 26px;
+        --buffer: 16px;
+        --frame-pad: 8px;
+    }
+
+    header h1 {
+        margin: 0.3vh 0;
+    }
+
+    #message-area {
+        min-height: 4vh;
+        padding: 0.5vh 1vw;
+    }
+
+    .board-wrapper h2 {
+        margin-bottom: 0.5vh;
+    }
+
+    #staging-ships {
+        padding: 0.5vh;
+        gap: 0.3vh;
+    }
+
+    .ship-segment {
+        width: 26px;
+        height: 26px;
+    }
+
+    .destroyer-container {
+        width: 52px;
+        height: 26px;
+    }
+
+    .submarine-container,
+    .cruiser-container {
+        width: 78px;
+        height: 26px;
+    }
+
+    .battleship-container {
+        width: 104px;
+        height: 26px;
+    }
+
+    .carrier-container {
+        width: 130px;
+        height: 26px;
+    }
+
+    .destroyer-container.vertical {
+        width: 26px;
+        height: 52px;
+    }
+
+    .submarine-container.vertical,
+    .cruiser-container.vertical {
+        width: 26px;
+        height: 78px;
+    }
+
+    .battleship-container.vertical {
+        width: 26px;
+        height: 104px;
+    }
+
+    .carrier-container.vertical {
+        width: 26px;
+        height: 130px;
+    }
+}
