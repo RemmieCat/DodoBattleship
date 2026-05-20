@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="description" content="Play Battleship against the computer at three difficulty levels">
     <meta name="theme-color" content="#0f89c6">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Battleship</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
@@ -91,7 +94,17 @@
             <button id="view-stats-btn" style="display: none;">View Statistics</button>
             <button id="new-game-btn" style="display: none;">New Game</button>
         </div>
+
+        <!-- Footer -->
+        <div id="footer">
+            <span id="version">v2.1</span>
+            <span class="divider">•</span>
+            <a href="#" id="reset-stats-link">Reset Scores</a>
+        </div>
     </div>
+
+    <!-- Dragging Ghost Ship -->
+    <div id="drag-ghost" style="display: none;"></div>
 
     <!-- Statistics Modal -->
     <div id="stats-modal" style="display: none;">

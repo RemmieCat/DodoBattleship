@@ -28,6 +28,11 @@
     box-sizing: border-box;
 }
 
+html {
+    height: 100%;
+    overflow: hidden;
+}
+
 body {
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     background: #f6f7fb;
@@ -35,6 +40,10 @@ body {
     margin: 0;
     padding: 0;
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+    width: 100vw;
+    position: fixed;
+    overscroll-behavior: none;
 }
 
 /* Splash Screen */
@@ -75,12 +84,17 @@ body {
 
 /* Game Screen */
 #game-screen {
-    padding: 1vh 1vw;
+    padding: 1vh 1vw 0;
     height: 100vh;
+    height: 100dvh;
+    width: 100vw;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
     overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
 }
 
 header {
@@ -645,6 +659,73 @@ button:active {
     background: #c53030;
 }
 
+/* Footer */
+#footer {
+    text-align: center;
+    padding: 1vh 0;
+    font-size: clamp(0.7rem, 1.4vh, 0.85rem);
+    color: #6b7280;
+    flex-shrink: 0;
+    margin-top: auto;
+}
+
+#footer .divider {
+    margin: 0 8px;
+}
+
+#version {
+    font-weight: 500;
+}
+
+#reset-stats-link {
+    color: #0f89c6;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+#reset-stats-link:hover {
+    color: #0d76ac;
+    text-decoration: underline;
+}
+
+/* Drag Ghost - visible ship while dragging */
+#drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+    opacity: 0.8;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #8b9196 0%, #b0b5ba 50%, #8b9196 100%);
+    border: 2px solid #4a5056;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    display: flex;
+    overflow: hidden;
+}
+
+#drag-ghost .ghost-segment {
+    border: 1px solid rgba(74, 80, 86, 0.3);
+    position: relative;
+    background: linear-gradient(180deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.1) 100%);
+}
+
+#drag-ghost .ghost-segment:last-child {
+    border-right: none;
+}
+
+#drag-ghost.vertical .ghost-segment {
+    border-right: none;
+    border-bottom: 1px solid rgba(74, 80, 86, 0.3);
+}
+
+#drag-ghost.vertical .ghost-segment:last-child {
+    border-bottom: none;
+}
+
 /* Ship dragging */
 .ship.dragging {
     opacity: 0.5;
@@ -788,42 +869,206 @@ button:active {
 
 /* Responsive Design */
 
-/* Galaxy Tab S9 11" - Landscape (2560x1600) - Primary Device */
+/* Galaxy Tab S9 11" - Landscape (2560x1600) - Maximize board size */
 @media (min-width: 1400px) and (min-height: 900px) {
     :root {
-        --cell: 45px;
-        --buffer: 28px;
-        --frame-pad: 18px;
+        --cell: 60px;
+        --buffer: 32px;
+        --frame-pad: 20px;
+    }
+
+    .game-container {
+        gap: 3vw;
+    }
+
+    #message-area {
+        font-size: clamp(1.1rem, 2.5vh, 1.6rem);
+    }
+
+    .ship-segment {
+        width: 60px;
+        height: 60px;
+    }
+
+    .destroyer-container {
+        width: 120px;
+        height: 60px;
+    }
+
+    .submarine-container,
+    .cruiser-container {
+        width: 180px;
+        height: 60px;
+    }
+
+    .battleship-container {
+        width: 240px;
+        height: 60px;
+    }
+
+    .carrier-container {
+        width: 300px;
+        height: 60px;
+    }
+
+    .destroyer-container.vertical {
+        width: 60px;
+        height: 120px;
+    }
+
+    .submarine-container.vertical,
+    .cruiser-container.vertical {
+        width: 60px;
+        height: 180px;
+    }
+
+    .battleship-container.vertical {
+        width: 60px;
+        height: 240px;
+    }
+
+    .carrier-container.vertical {
+        width: 60px;
+        height: 300px;
+    }
+
+    #staging-ships {
+        padding: 25px;
+        gap: 12px;
     }
 }
 
 /* Galaxy Tab S9 11" - Portrait (1600x2560) */
 @media (max-width: 1600px) and (min-height: 2000px) {
     :root {
-        --cell: 38px;
-        --buffer: 24px;
-        --frame-pad: 14px;
+        --cell: 50px;
+        --buffer: 28px;
+        --frame-pad: 18px;
     }
 
     .game-container {
         flex-direction: column;
         gap: 2vh;
     }
+
+    .ship-segment {
+        width: 50px;
+        height: 50px;
+    }
+
+    .destroyer-container {
+        width: 100px;
+        height: 50px;
+    }
+
+    .submarine-container,
+    .cruiser-container {
+        width: 150px;
+        height: 50px;
+    }
+
+    .battleship-container {
+        width: 200px;
+        height: 50px;
+    }
+
+    .carrier-container {
+        width: 250px;
+        height: 50px;
+    }
+
+    .destroyer-container.vertical {
+        width: 50px;
+        height: 100px;
+    }
+
+    .submarine-container.vertical,
+    .cruiser-container.vertical {
+        width: 50px;
+        height: 150px;
+    }
+
+    .battleship-container.vertical {
+        width: 50px;
+        height: 200px;
+    }
+
+    .carrier-container.vertical {
+        width: 50px;
+        height: 250px;
+    }
+
+    #staging-ships {
+        padding: 20px;
+        gap: 10px;
+    }
 }
 
 /* Tablet landscape - smaller tablets */
 @media (max-width: 1400px) and (min-width: 900px) {
     :root {
-        --cell: 35px;
-        --buffer: 22px;
-        --frame-pad: 14px;
+        --cell: 42px;
+        --buffer: 24px;
+        --frame-pad: 16px;
+    }
+
+    .ship-segment {
+        width: 42px;
+        height: 42px;
+    }
+
+    .destroyer-container {
+        width: 84px;
+        height: 42px;
+    }
+
+    .submarine-container,
+    .cruiser-container {
+        width: 126px;
+        height: 42px;
+    }
+
+    .battleship-container {
+        width: 168px;
+        height: 42px;
+    }
+
+    .carrier-container {
+        width: 210px;
+        height: 42px;
+    }
+
+    .destroyer-container.vertical {
+        width: 42px;
+        height: 84px;
+    }
+
+    .submarine-container.vertical,
+    .cruiser-container.vertical {
+        width: 42px;
+        height: 126px;
+    }
+
+    .battleship-container.vertical {
+        width: 42px;
+        height: 168px;
+    }
+
+    .carrier-container.vertical {
+        width: 42px;
+        height: 210px;
+    }
+
+    #staging-ships {
+        padding: 15px;
+        gap: 8px;
     }
 }
 
 /* Tablet portrait / large phone landscape */
 @media (max-width: 900px) and (min-width: 600px) {
     :root {
-        --cell: 32px;
+        --cell: 35px;
         --buffer: 20px;
         --frame-pad: 12px;
     }
@@ -834,64 +1079,68 @@ button:active {
     }
 
     #staging-ships {
-        padding: 1vh;
-        gap: 0.8vh;
+        padding: 12px;
+        gap: 8px;
     }
 
     .ship-segment {
-        width: 32px;
-        height: 32px;
+        width: 35px;
+        height: 35px;
     }
 
     .destroyer-container {
-        width: 64px;
-        height: 32px;
+        width: 70px;
+        height: 35px;
     }
 
     .submarine-container,
     .cruiser-container {
-        width: 96px;
-        height: 32px;
+        width: 105px;
+        height: 35px;
     }
 
     .battleship-container {
-        width: 128px;
-        height: 32px;
+        width: 140px;
+        height: 35px;
     }
 
     .carrier-container {
-        width: 160px;
-        height: 32px;
+        width: 175px;
+        height: 35px;
     }
 
     .destroyer-container.vertical {
-        width: 32px;
-        height: 64px;
+        width: 35px;
+        height: 70px;
     }
 
     .submarine-container.vertical,
     .cruiser-container.vertical {
-        width: 32px;
-        height: 96px;
+        width: 35px;
+        height: 105px;
     }
 
     .battleship-container.vertical {
-        width: 32px;
-        height: 128px;
+        width: 35px;
+        height: 140px;
     }
 
     .carrier-container.vertical {
-        width: 32px;
-        height: 160px;
+        width: 35px;
+        height: 175px;
     }
 }
 
-/* Galaxy S21 (2400x1080) and similar phones */
-@media (max-width: 600px) {
+/* Galaxy S21 Portrait - Smaller cells to fit everything */
+@media (max-width: 600px) and (orientation: portrait) {
     :root {
-        --cell: 28px;
-        --buffer: 18px;
-        --frame-pad: 10px;
+        --cell: 24px;
+        --buffer: 14px;
+        --frame-pad: 8px;
+    }
+
+    #game-screen {
+        padding: 0.5vh 1vw 0;
     }
 
     .splash-title {
@@ -902,61 +1151,120 @@ button:active {
         font-size: clamp(1.2rem, 3vh, 1.8rem);
     }
 
-    .game-container {
-        flex-direction: column;
-        gap: 1vh;
+    #message-area {
+        min-height: 4.5vh;
+        padding: 0.8vh 2vw;
+        font-size: clamp(0.85rem, 2vh, 1.1rem);
+        margin-bottom: 0.4vh;
     }
 
-    #staging-ships {
-        padding: 0.8vh;
-        gap: 0.5vh;
+    header {
+        margin-bottom: 0.4vh;
+    }
+
+    .board-wrapper h2 {
+        font-size: clamp(0.8rem, 1.8vh, 1rem);
+        margin-bottom: 0.4vh;
+    }
+
+    .game-container {
+        flex-direction: column;
+        gap: 0.6vh;
+    }
+
+    /* Smaller staging area ONLY during placement (when ships div is visible) */
+    #staging-ships:not([style*="display: none"]) ~ #computer-board {
+        display: none !important;
+    }
+
+    #staging-ships:not([style*="display: none"]) {
+        display: flex !important;
+    }
+
+    /* Staging surface is smaller during ship placement */
+    body:has(#staging-ships:not([style*="display: none"])) #staging-surface {
+        width: calc(var(--cols) * 20px + 2 * 10px);
+        height: calc(var(--rows) * 20px + 2 * 10px);
+    }
+
+    body:has(#staging-ships:not([style*="display: none"])) #staging-ships {
+        top: 10px;
+        left: 10px;
+        width: calc(var(--cols) * 20px);
+        height: calc(var(--rows) * 20px);
+        padding: 6px;
+        gap: 4px;
+    }
+
+    body:has(#staging-ships:not([style*="display: none"])) .board-wrapper:first-child .frame {
+        padding: 6px;
     }
 
     .ship-segment {
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
     }
 
     .destroyer-container {
-        width: 56px;
-        height: 28px;
+        width: 48px;
+        height: 24px;
     }
 
     .submarine-container,
     .cruiser-container {
-        width: 84px;
-        height: 28px;
+        width: 72px;
+        height: 24px;
     }
 
     .battleship-container {
-        width: 112px;
-        height: 28px;
+        width: 96px;
+        height: 24px;
     }
 
     .carrier-container {
-        width: 140px;
-        height: 28px;
+        width: 120px;
+        height: 24px;
     }
 
     .destroyer-container.vertical {
-        width: 28px;
-        height: 56px;
+        width: 24px;
+        height: 48px;
     }
 
     .submarine-container.vertical,
     .cruiser-container.vertical {
-        width: 28px;
-        height: 84px;
+        width: 24px;
+        height: 72px;
     }
 
     .battleship-container.vertical {
-        width: 28px;
-        height: 112px;
+        width: 24px;
+        height: 96px;
     }
 
     .carrier-container.vertical {
-        width: 28px;
-        height: 140px;
+        width: 24px;
+        height: 120px;
+    }
+
+    #game-controls {
+        margin-top: 0.4vh;
+        gap: 1vw;
+    }
+
+    button {
+        padding: clamp(5px, 0.8vh, 10px) clamp(10px, 1.5vw, 18px);
+        font-size: clamp(0.75rem, 1.4vh, 0.9rem);
+    }
+
+    .difficulty-btn {
+        padding: clamp(5px, 0.8vh, 9px) clamp(10px, 1.5vw, 16px);
+        font-size: clamp(0.7rem, 1.3vh, 0.85rem);
+    }
+
+    #footer {
+        padding: 0.4vh 0;
+        font-size: clamp(0.65rem, 1.2vh, 0.8rem);
     }
 
     .statistics-table {
@@ -971,73 +1279,103 @@ button:active {
     }
 }
 
-/* Very short screens or landscape phones */
-@media (max-height: 700px) {
+/* Phone Landscape - Very constrained height */
+@media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
     :root {
-        --cell: 26px;
-        --buffer: 16px;
-        --frame-pad: 8px;
+        --cell: 22px;
+        --buffer: 12px;
+        --frame-pad: 6px;
+    }
+
+    #game-screen {
+        padding: 0.3vh 0.5vw 0;
     }
 
     #message-area {
-        min-height: 5vh;
-        padding: 0.8vh 1vw;
+        min-height: 4vh;
+        padding: 0.5vh 1vw;
+        font-size: clamp(0.75rem, 1.8vh, 1rem);
+        margin-bottom: 0.3vh;
+    }
+
+    header {
+        margin-bottom: 0.3vh;
     }
 
     .board-wrapper h2 {
-        margin-bottom: 0.5vh;
-        font-size: clamp(0.85rem, 1.8vh, 1.1rem);
+        font-size: clamp(0.75rem, 1.6vh, 0.95rem);
+        margin-bottom: 0.3vh;
+    }
+
+    .game-container {
+        flex-direction: row;
+        gap: 1vw;
     }
 
     #staging-ships {
-        padding: 0.5vh;
-        gap: 0.3vh;
+        padding: 6px;
+        gap: 4px;
     }
 
     .ship-segment {
-        width: 26px;
-        height: 26px;
+        width: 22px;
+        height: 22px;
     }
 
     .destroyer-container {
-        width: 52px;
-        height: 26px;
+        width: 44px;
+        height: 22px;
     }
 
     .submarine-container,
     .cruiser-container {
-        width: 78px;
-        height: 26px;
+        width: 66px;
+        height: 22px;
     }
 
     .battleship-container {
-        width: 104px;
-        height: 26px;
+        width: 88px;
+        height: 22px;
     }
 
     .carrier-container {
-        width: 130px;
-        height: 26px;
+        width: 110px;
+        height: 22px;
     }
 
     .destroyer-container.vertical {
-        width: 26px;
-        height: 52px;
+        width: 22px;
+        height: 44px;
     }
 
     .submarine-container.vertical,
     .cruiser-container.vertical {
-        width: 26px;
-        height: 78px;
+        width: 22px;
+        height: 66px;
     }
 
     .battleship-container.vertical {
-        width: 26px;
-        height: 104px;
+        width: 22px;
+        height: 88px;
     }
 
     .carrier-container.vertical {
-        width: 26px;
-        height: 130px;
+        width: 22px;
+        height: 110px;
+    }
+
+    #game-controls {
+        margin-top: 0.3vh;
+        gap: 0.5vw;
+    }
+
+    button {
+        padding: clamp(4px, 0.6vh, 8px) clamp(8px, 1vw, 14px);
+        font-size: clamp(0.7rem, 1.3vh, 0.85rem);
+    }
+
+    #footer {
+        padding: 0.3vh 0;
+        font-size: clamp(0.6rem, 1.1vh, 0.75rem);
     }
 }

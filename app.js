@@ -58,7 +58,8 @@ let splashScreen, gameScreen, messageArea;
 let stagingSurface, playerSurface, computerBoard, playerBoard;
 let stagingShips, leftBoardLabel;
 let startGameBtn, difficultySelector, debugToggleBtn, newGameBtn, randomizeBtn, viewStatsBtn;
-let statsModal, statsModalBody, closeStatsModal;
+let statsModal, statsModalBody, closeStatsModal, resetStatsLink;
+let dragGhost;
 
 // Drag state
 let draggedShip = null;
@@ -88,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     statsModal = document.getElementById('stats-modal');
     statsModalBody = document.getElementById('stats-modal-body');
     closeStatsModal = document.getElementById('close-stats-modal');
+    resetStatsLink = document.getElementById('reset-stats-link');
+    dragGhost = document.getElementById('drag-ghost');
 
     // Setup event listeners
     splashScreen.addEventListener('click', startSetup);
@@ -97,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     randomizeBtn.addEventListener('click', randomizePlayerShips);
     viewStatsBtn.addEventListener('click', showStatsModal);
     closeStatsModal.addEventListener('click', hideStatsModal);
+    resetStatsLink.addEventListener('click', resetStatistics);
 
     // Close modal when clicking overlay
     statsModal.addEventListener('click', (e) => {
@@ -160,12 +164,19 @@ function setupShipDragDrop() {
     const ships = document.querySelectorAll('.ship');
 
     ships.forEach(ship => {
-        // Click to rotate in staging, or return to staging if on board
+        let touchStartTime = 0;
+        let hasMoved = false;
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        // Click/Tap to rotate in staging
         ship.addEventListener('click', (e) => {
             if (gameState.phase !== 'placement') return;
-            if (draggedShipElement) return; // Ignore if dragging
+            if (hasMoved) return; // Was a drag, not a click
 
             if (ship.parentElement === stagingShips) {
+                e.preventDefault();
+                e.stopPropagation();
                 ship.classList.toggle('vertical');
             }
         });
@@ -198,6 +209,12 @@ function setupShipDragDrop() {
         ship.addEventListener('touchstart', (e) => {
             if (gameState.phase !== 'placement') return;
 
+            touchStartTime = Date.now();
+            hasMoved = false;
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+
             draggedShipElement = ship;
             draggedShip = {
                 name: ship.dataset.ship,
@@ -209,17 +226,45 @@ function setupShipDragDrop() {
             shipOriginalPosition = { x: rect.left, y: rect.top };
             ship.classList.add('dragging');
 
+            // Create drag ghost
+            createDragGhost(ship);
+
             e.preventDefault();
         }, { passive: false });
 
         ship.addEventListener('touchmove', (e) => {
             if (!draggedShipElement) return;
+
+            const touch = e.touches[0];
+            const deltaX = Math.abs(touch.clientX - touchStartX);
+            const deltaY = Math.abs(touch.clientY - touchStartY);
+
+            // Only mark as moved if moved more than 10 pixels
+            if (deltaX > 10 || deltaY > 10) {
+                hasMoved = true;
+            }
+
+            updateDragGhost(touch.clientX, touch.clientY);
+
             e.preventDefault();
         }, { passive: false });
 
         ship.addEventListener('touchend', (e) => {
             if (!draggedShipElement) return;
             e.preventDefault();
+
+            // Check if it was a quick tap (< 200ms and no movement)
+            const touchDuration = Date.now() - touchStartTime;
+            if (touchDuration < 200 && !hasMoved && ship.parentElement === stagingShips) {
+                // It was a tap - rotate the ship
+                ship.classList.toggle('vertical');
+                ship.classList.remove('dragging');
+                draggedShipElement = null;
+                draggedShip = null;
+                dragOffset = 0;
+                hideDragGhost();
+                return;
+            }
 
             const touch = e.changedTouches[0];
             const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -235,6 +280,8 @@ function setupShipDragDrop() {
             draggedShipElement = null;
             draggedShip = null;
             dragOffset = 0;
+            hasMoved = false;
+            hideDragGhost();
         }, { passive: false });
 
         // Drag start (desktop)
@@ -930,6 +977,65 @@ function showStatsModal() {
 // Hide statistics modal
 function hideStatsModal() {
     statsModal.style.display = 'none';
+}
+
+// Reset statistics
+function resetStatistics(e) {
+    e.preventDefault();
+    if (confirm('Are you sure you want to reset all statistics? This cannot be undone.')) {
+        statistics = {
+            1: { wins: 0, losses: 0 },
+            2: { wins: 0, losses: 0 },
+            3: { wins: 0, losses: 0 }
+        };
+        saveStatistics();
+        if (statsModal.style.display === 'flex') {
+            statsModalBody.innerHTML = buildStatisticsText();
+        }
+        alert('Statistics have been reset.');
+    }
+}
+
+// Create drag ghost
+function createDragGhost(ship) {
+    const isVertical = ship.classList.contains('vertical');
+    const length = parseInt(ship.dataset.length);
+    const cellSize = getComputedStyle(document.documentElement).getPropertyValue('--cell').trim();
+    const size = parseInt(cellSize);
+
+    dragGhost.innerHTML = '';
+    dragGhost.className = isVertical ? 'vertical' : '';
+
+    if (isVertical) {
+        dragGhost.style.width = size + 'px';
+        dragGhost.style.height = (size * length) + 'px';
+        dragGhost.style.flexDirection = 'column';
+    } else {
+        dragGhost.style.width = (size * length) + 'px';
+        dragGhost.style.height = size + 'px';
+        dragGhost.style.flexDirection = 'row';
+    }
+
+    for (let i = 0; i < length; i++) {
+        const segment = document.createElement('div');
+        segment.className = 'ghost-segment';
+        segment.style.width = size + 'px';
+        segment.style.height = size + 'px';
+        dragGhost.appendChild(segment);
+    }
+
+    dragGhost.style.display = 'flex';
+}
+
+// Update drag ghost position
+function updateDragGhost(x, y) {
+    dragGhost.style.left = x + 'px';
+    dragGhost.style.top = y + 'px';
+}
+
+// Hide drag ghost
+function hideDragGhost() {
+    dragGhost.style.display = 'none';
 }
 
 // Reset game
